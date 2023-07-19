@@ -1149,6 +1149,7 @@ class _ItemState:
     def undo(self, event: Event):
         assert event.after_id == 0 or event.before_id == 0
         item_id = event.before_id or event.after_id
+<<<<<<< Updated upstream
         prev = None
         while prev is None or prev.item_id != item_id:
             prev = self._events.pop()
@@ -1161,6 +1162,23 @@ class _ItemState:
             else:
                 raise TypeError(f"Unexpected event type {prev.type}")
 
+=======
+        #prev = None
+        print("Attempting undo for item id:", item_id)
+        #while prev is None or prev.item_id != item_id:
+        prevevent = [self._events.pop()]
+        while self._events[-1].timestamp == prevevent[0].timestamp:
+            self._events.pop()
+        for prev in prevevent:
+                if prev.type == "ITEM_PURCHASED":
+                    self.destroy(prev.item_id, True)
+                elif prev.type == "ITEM_DESTROYED":
+                    self.add(prev.item_id)
+                elif prev.type == "ITEM_SOLD":
+                    self.add(prev.item_id)
+                else:
+                    raise TypeError(f"Unexpected event type {prev.type}")
+>>>>>>> Stashed changes
 
 @searchable({str: ["items"], Item: ["items"]})
 class ParticipantStats(CassiopeiaObject):
