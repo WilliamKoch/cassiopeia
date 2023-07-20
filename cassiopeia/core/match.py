@@ -1164,14 +1164,21 @@ class _ItemState:
         assert event.after_id == 0 or event.before_id == 0
         item_id = event.before_id or event.after_id
 
+        # Possible fix: if two items are purchased in initial buy, they have two undos, so code causes pop from empty list
+        # If a recipe is undone, has purchase and destroy and can lose an item
+        # Solution? If purchase AND destroy combo at same time stamp, execute all. If mult purchases, do not.
+
         #prev = None
         print("Attempting undo for item id:", item_id, "and participantID:", event.participant_id, "at time:", event.timestamp)
         #while prev is None or prev.item_id != item_id:
         prevevent = [self._events.pop()]
-        if len(self._events) >0:
-            while (self._events[-1].timestamp == prevevent[0].timestamp) and (self._events[-1].participant_id == prevevent[0].participant_id):
-                print("Identified a second event at time", prevevent[0].timestamp)
-                prevevent.append(self._events.pop())
+        #if len(self._events) > 0:
+        while (len(self._events) > 0) and \
+                (self._events[-1].timestamp == prevevent[0].timestamp) and \
+                (self._events[-1].participant_id == prevevent[0].participant_id) and \
+                (self._events[-1].type != prevevent[0].type):
+            print("Identified a second event at time", prevevent[0].timestamp)
+            prevevent.append(self._events.pop())
         #FIX THIS SORTING
         #prevevent = sorted(prevevent.items(), key=lambda x: {'ITEM_DESTROYED': 1, 'ITEM_SOLD': 2, 'ITEM_PURCHASED': 3}[x[0]])
         prevevent.sort(key=self.TestEventSort)
