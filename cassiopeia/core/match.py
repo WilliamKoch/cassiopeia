@@ -1140,45 +1140,51 @@ class _ItemState:
                 2013,
                 2421,
                 3600,
+                2138, #Elixer of Iron
+                2139, #Elixir of Sorcery
+                2140, #Elixir of Wrath
             ):  # Something weird can happen with trinkets and klepto items
                 pass
             else:
+                print("Failed to destroy item id:", item)
                 raise error
         self._items.reverse()
+
+    def TestEventSort(self, x):
+        if x.type == "ITEM_DESTROYED":
+            return 1
+        elif x.type == "ITEM_SOLD":
+            return 2
+        elif x.type == "ITEM_PURCHASED":
+            return 3
+        else:
+            raise TypeError(f"Unexpected event type {x.type}")
 
     def undo(self, event: Event):
         assert event.after_id == 0 or event.before_id == 0
         item_id = event.before_id or event.after_id
-<<<<<<< Updated upstream
-        prev = None
-        while prev is None or prev.item_id != item_id:
-            prev = self._events.pop()
-            if prev.type == "ITEM_PURCHASED":
-                self.destroy(prev.item_id)
-            elif prev.type == "ITEM_DESTROYED":
-                self.add(prev.item_id)
-            elif prev.type == "ITEM_SOLD":
-                self.add(prev.item_id)
-            else:
-                raise TypeError(f"Unexpected event type {prev.type}")
 
-=======
         #prev = None
-        print("Attempting undo for item id:", item_id)
+        print("Attempting undo for item id:", item_id, "and participantID:", event.participant_id, "at time:", event.timestamp)
         #while prev is None or prev.item_id != item_id:
         prevevent = [self._events.pop()]
-        while self._events[-1].timestamp == prevevent[0].timestamp:
-            self._events.pop()
+        if len(self._events) >0:
+            while (self._events[-1].timestamp == prevevent[0].timestamp) and (self._events[-1].participant_id == prevevent[0].participant_id):
+                print("Identified a second event at time", prevevent[0].timestamp)
+                prevevent.append(self._events.pop())
+        #FIX THIS SORTING
+        #prevevent = sorted(prevevent.items(), key=lambda x: {'ITEM_DESTROYED': 1, 'ITEM_SOLD': 2, 'ITEM_PURCHASED': 3}[x[0]])
+        prevevent.sort(key=self.TestEventSort)
+
         for prev in prevevent:
                 if prev.type == "ITEM_PURCHASED":
-                    self.destroy(prev.item_id, True)
+                    self.destroy(prev.item_id)
                 elif prev.type == "ITEM_DESTROYED":
                     self.add(prev.item_id)
                 elif prev.type == "ITEM_SOLD":
                     self.add(prev.item_id)
                 else:
                     raise TypeError(f"Unexpected event type {prev.type}")
->>>>>>> Stashed changes
 
 @searchable({str: ["items"], Item: ["items"]})
 class ParticipantStats(CassiopeiaObject):
