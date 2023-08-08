@@ -949,6 +949,12 @@ class ParticipantState:
         self._deaths = 0
         self._assists = 0
         self._objectives = 0
+        self._turrets = 0
+        self._inhibitors = 0
+        self._dragons = 0
+        self._heralds = 0
+        self._barons = 0
+        self._wardactions = 0
         self._level = 1
         self._processed_events = []
 
@@ -968,9 +974,22 @@ class ParticipantState:
                 self._skills[event.skill] += 1
                 self._level += 1
         elif event.type in ("WARD_PLACED", "WARD_KILL"):
-            return
-        elif event.type in ("ELITE_MONSTER_KILL", "BUILDING_KILL"):
+            self._wardactions += 1
+        elif event.type == "ELITE_MONSTER_KILL":
             self._objectives += 1
+            if event.monster_type == "DRAGON":
+                self._dragons += 1
+            elif event.monster_type == "BARON_NASHOR":
+                self._barons += 1
+            elif event.monster_type == "RIFTHERALD":
+                self._heralds += 1
+        elif event.type == "BUILDING_KILL":
+            self._objectives += 1
+            if event.building_type == "TOWER_BUILDING":
+                self._turrets += 1
+            elif event.building_type == "INHIBITOR_BUILDING":
+                self._inhibitors += 1
+
         else:
             # print(f"Did not process event {event.to_dict()}")
             pass
@@ -1009,6 +1028,31 @@ class ParticipantState:
     def objectives(self) -> int:
         """Number of objectives assisted in."""
         return self._objectives
+
+    @property
+    def turrets(self) -> int:
+        return self._turrets
+
+    @property
+    def inhibitors(self) -> int:
+        return self._inhibitors
+
+    @property
+    def dragons(self) -> int:
+        return self._dragons
+
+    @property
+    def heralds(self) -> int:
+        return self._heralds
+
+    @property
+    def barons(self) -> int:
+        return self._barons
+
+    @property
+    def wardactions(self) -> int:
+        # returns ward placements + kills, but not sure if identical to vision score
+        return self._wardactions
 
     @property
     def level(self) -> int:
@@ -1169,7 +1213,7 @@ class _ItemState:
         # Solution? If purchase AND destroy combo at same time stamp, execute all. If mult purchases, do not.
 
         #prev = None
-        print("Attempting undo for item id:", item_id, "and participantID:", event.participant_id, "at time:", event.timestamp)
+        #print("Attempting undo for item id:", item_id, "and participantID:", event.participant_id, "at time:", event.timestamp)
         #while prev is None or prev.item_id != item_id:
         prevevent = [self._events.pop()]
         #if len(self._events) > 0:
@@ -1177,7 +1221,7 @@ class _ItemState:
                 (self._events[-1].timestamp == prevevent[0].timestamp) and \
                 (self._events[-1].participant_id == prevevent[0].participant_id) and \
                 (self._events[-1].type != prevevent[0].type):
-            print("Identified a second event at time", prevevent[0].timestamp)
+            #print("Identified a second event at time", prevevent[0].timestamp)
             prevevent.append(self._events.pop())
         #FIX THIS SORTING
         #prevevent = sorted(prevevent.items(), key=lambda x: {'ITEM_DESTROYED': 1, 'ITEM_SOLD': 2, 'ITEM_PURCHASED': 3}[x[0]])
